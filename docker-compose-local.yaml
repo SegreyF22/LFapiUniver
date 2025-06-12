@@ -11,6 +11,18 @@ services:
       - "15432:5432"
     networks:
       - custom
+  db_test:
+    container_name: "db_test"
+    image: postgres:14.6-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=fapi_test
+      - POSTGRES_PASSWORD=fapi_test
+      - POSTGRES_DB=fapi_test
+    ports:
+      - "15433:5432"
+    networks:
+      - custom
 networks:
   custom:
     driver: bridge
