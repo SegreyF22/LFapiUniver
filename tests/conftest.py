@@ -70,7 +70,7 @@ async def asyncpg_pool():
     yield pool
     pool.close()
 
-@pytest.fixture()
+@pytest.fixture
 async def get_user_from_database(asyncpg_pool):
 
     async def get_user_from_database_by_uuid(user_id: str):
@@ -78,6 +78,15 @@ async def get_user_from_database(asyncpg_pool):
             return await connection.fetch("""SELECT * FROM users WHERE user_id = $1;""", user_id)
 
     return get_user_from_database_by_uuid
+
+@pytest.fixture
+async def create_user_in_database(asyncpg_pool):
+
+    async def create_user_in_database(user_id: str, name: str, surname: str, email: str, is_active: bool):
+        async with asyncpg_pool.acquire() as connection:
+            return await connection.execute("""INSERT INTO users VALUES ($1, $2, $3, $4, $5)""",
+                                            user_id, name, surname, email, is_active)
+    return create_user_in_database
 
 
 
