@@ -3,14 +3,19 @@ from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import with_parent
 from sqlalchemy.testing import assert_warns
+from logging import getLogger
+from hashing import Hasher
+
 
 from api.models import UserCreate, ShowUser, DeleteUserResponse, UpdateUserResponse, UpdateUserRequest
 from db.dals import UserDAL
 from db.session import get_db
 
+logger = getLogger(__name__)
 
 # роутер для user
 user_router = APIRouter()
@@ -23,6 +28,7 @@ async def _create_new_user(body: UserCreate, db) -> ShowUser:
                 name=body.name,
                 surname=body.surname,
                 email=body.email,
+                hashed_password=Hasher.get_password_hash(body.password)
             )
             return ShowUser(
                 user_id=user.user_id,
@@ -62,7 +68,11 @@ async def _get_user_by_id(user_id, db) ->Union[ShowUser, None]:
 
 @user_router.post("/", response_model=ShowUser)
 async def create_user(body: UserCreate, db: AsyncSession = Depends(get_db)) -> ShowUser:
-    return await _create_new_user(body, db)
+    try:
+        return await _create_new_user(body, db)
+    except IntegrityError as err:
+        logger.error(err)
+        raise HTTPException(status_code=503, detail=f"Database error: {err}")
 
 @user_router.delete("/", response_model=DeleteUserResponse)
 async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db)) -> DeleteUserResponse:

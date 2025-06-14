@@ -28,6 +28,7 @@ class UserCreate(BaseModel):
     surname: str
     # email: EmailStr
     email: str
+    password: str
 
     @validator("name")
     def validate_name(cls, value):
@@ -63,3 +64,8 @@ class UpdateUserRequest(BaseModel):
         if not LETTER_MATCH_PATTERN.match(value):
             raise HTTPException(status_code=422, detail="Surname should contains only letters")
         return value
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
